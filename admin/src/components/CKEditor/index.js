@@ -35,11 +35,26 @@ const Editor = ({ onChange, name, value, disabled }) => {
     setMediaLibVisible((prev) => !prev);
   };
 
-  const handleChangeAssets = (assets) => {
-    let newValue = "";
+  const getImageRatio = (url) => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = function () {
+      resolve(
+        (this.width && this.height) ?
+          this.width / this.height :
+          null
+      );
+    }
+    img.onerror = function () {
+      resolve(null);
+    }
+    img.src = url;
+  });
 
-    assets.map((asset) => {
+  const handleChangeAssets = async (assets) => {
+    const values = await Promise.all(assets.map(async (asset) => {
       if (asset.mime.includes("image")) {
+        const imageRatio = await getImageRatio(asset?.url);
+
         if (asset.formats && uploadCfg?.responsiveDimensions) {
           let set = "";
           let keys = Object.keys(asset.formats).sort((a, b) => {
@@ -49,18 +64,21 @@ const Editor = ({ onChange, name, value, disabled }) => {
             let str = prefixFileUrlWithBackendUrl(asset.formats[k].url) + ` ${asset.formats[k].width}w,`;
             set = set + str;
           });
-          const imgTag = `<img src="${asset.url}" alt="${asset.alt}" srcset="${set}"></img>`;
-          newValue = `${newValue}${imgTag}`;
+          return imageRatio ?
+            `<img src="${asset.url}" alt="${asset.alt}" srcset="${set}" style="aspect-ratio: ${imageRatio}"></img>` :
+            `<img src="${asset.url}" alt="${asset.alt}" srcset="${set}"></img>`;
         } else {
-          const imgTag = `<img src="${asset.url}" alt="${asset.alt}"></img>`;
-          newValue = `${newValue}${imgTag}`;
+          return imageRatio ?
+            `<img src="${asset.url}" alt="${asset.alt}" style="aspect-ratio: ${imageRatio}"></img>` :
+            `<img src="${asset.url}" alt="${asset.alt}"></img>`;
         }
       } else if (asset.mime.includes("application/pdf")) {
-        const downloadTag = `<a href="${prefixFileUrlWithBackendUrl(asset.url)}" download="${asset.alt}">${asset.alt || 'Download PDF'}</a>`
-        newValue = `${newValue}${downloadTag}`
+        return `<a href="${prefixFileUrlWithBackendUrl(asset.url)}" download="${asset.alt}">${asset.alt || 'Download PDF'}</a>`;
       }
       // Handle videos and other type of files by adding some code
-    });
+    }));
+
+    const newValue = values?.toString();
 
     const viewFragment = editor.data.processor.toView(newValue);
     const modelFragment = editor.data.toModel(viewFragment);
