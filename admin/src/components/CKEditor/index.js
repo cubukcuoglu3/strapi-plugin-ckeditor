@@ -65,12 +65,12 @@ const Editor = ({ onChange, name, value, disabled }) => {
             set = set + str;
           });
           return imageRatio ?
-            `<img src="${asset.url}" alt="${asset.alt}" srcset="${set}" style="aspect-ratio: ${imageRatio}"></img>` :
-            `<img src="${asset.url}" alt="${asset.alt}" srcset="${set}"></img>`;
+            `<img src="${asset.url}" alt="${asset.alt}" srcset="${set}" loading="lazy" style="aspect-ratio: ${imageRatio}"></img>` :
+            `<img src="${asset.url}" alt="${asset.alt}" srcset="${set}" loading="lazy"></img>`;
         } else {
           return imageRatio ?
-            `<img src="${asset.url}" alt="${asset.alt}" style="aspect-ratio: ${imageRatio}"></img>` :
-            `<img src="${asset.url}" alt="${asset.alt}"></img>`;
+            `<img src="${asset.url}" alt="${asset.alt}" loading="lazy" style="aspect-ratio: ${imageRatio}"></img>` :
+            `<img src="${asset.url}" alt="${asset.alt}" loading="lazy"></img>`;
         }
       } else if (asset.mime.includes("application/pdf")) {
         return `<a href="${prefixFileUrlWithBackendUrl(asset.url)}" download="${asset.alt}">${asset.alt || 'Download PDF'}</a>`;
